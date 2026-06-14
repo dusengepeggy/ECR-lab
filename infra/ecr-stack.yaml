@@ -1,0 +1,84 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: ECR repo + GitHub OIDC provider + least-privilege IAM role
+
+Parameters:
+  GitHubOrg:
+    Type: String
+    Description: Your GitHub username or org
+    Default: peggy
+  GitHubRepo:
+    Type: String
+    Description: Repository name
+    Default: ecr-docker-lab
+  EcrRepoName:
+    Type: String
+    Default: peggy-ecr-lab
+
+Resources:
+  # The ECR repository (with scanning + tags for bonus points)
+  EcrRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref EcrRepoName
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      ImageTagMutability: IMMUTABLE
+      Tags:
+        - Key: Project
+          Value: ECR-Docker-Lab
+        - Key: Owner
+          Value: Peggy
+
+  # Tell AWS to trust GitHub's OIDC tokens
+  GitHubOIDCProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        - ffffffffffffffffffffffffffffffffffffffff
+
+  # The role GitHub Actions assumes
+  GitHubActionsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: github-actions-ecr-push
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Ref GitHubOIDCProvider
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+              StringLike:
+                token.actions.githubusercontent.com:sub: !Sub 'repo:${GitHubOrg}/${GitHubRepo}:*'
+      Policies:
+        - PolicyName: ECRPushLeastPrivilege
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # This one MUST be on all resources — it has no resource scope
+              - Effect: Allow
+                Action: ecr:GetAuthorizationToken
+                Resource: '*'
+              # These are scoped to ONLY your repository
+              - Effect: Allow
+                Action:
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:InitiateLayerUpload
+                  - ecr:UploadLayerPart
+                  - ecr:CompleteLayerUpload
+                  - ecr:PutImage
+                Resource: !GetAtt EcrRepository.Arn
+
+Outputs:
+  RoleArn:
+    Description: Copy this into your GitHub workflow
+    Value: !GetAtt GitHubActionsRole.Arn
+  EcrUri:
+    Description: Your ECR repository URI
+    Value: !GetAtt EcrRepository.RepositoryUri

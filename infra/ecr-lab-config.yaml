@@ -1,0 +1,3 @@
+template-file-path: ecr-stack.yaml
+parameters: {}
+tags: {}
