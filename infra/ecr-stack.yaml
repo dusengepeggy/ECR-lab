@@ -5,11 +5,11 @@ Parameters:
   GitHubOrg:
     Type: String
     Description: Your GitHub username or org
-    Default: peggy
+    Default: dusengepeggy
   GitHubRepo:
     Type: String
     Description: Repository name
-    Default: ecr-docker-lab
+    Default: ECR-lab
   EcrRepoName:
     Type: String
     Default: peggy-ecr-lab
