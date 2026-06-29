@@ -22,7 +22,7 @@ Resources:
       RepositoryName: !Ref EcrRepoName
       ImageScanningConfiguration:
         ScanOnPush: true
-      ImageTagMutability: IMMUTABLE
+      ImageTagMutability: MUTABLE
       Tags:
         - Key: Project
           Value: ECR-Docker-Lab
