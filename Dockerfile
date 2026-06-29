@@ -8,6 +8,9 @@ RUN mvn package -DskipTests -B
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
+# Pull patched OS packages (fixes CVE-2026-2100 in p11-kit and any other base-image CVEs)
+RUN apk -U upgrade --no-cache
+
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 
