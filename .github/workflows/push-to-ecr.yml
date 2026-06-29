@@ -8,9 +8,9 @@ permissions:
   contents: read
 
 env:
-  AWS_REGION: eu-north-1
-  ECR_REPOSITORY: peggy-ecr-lab
-  IMAGE_TAG: peggydusenge_demoapp
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+  IMAGE_TAG: ${{ vars.IMAGE_TAG }}
 
 jobs:
   build-and-push:
@@ -22,7 +22,7 @@ jobs:
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::242201306552:role/github-actions-ecr-push
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-ecr-push
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
